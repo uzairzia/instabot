@@ -43,13 +43,10 @@ def initial_checker():
 
 
 def read_input(f, msg, n=None):
-    if n is not None:
+    if n:
         msg += " (enter to use default number: {})".format(n)
-    print(msg)
-    entered = sys.stdin.readline().strip() or str(n)
-    if isinstance(n, int):
-        entered = int(entered)
-    f.write(str(entered) + "\n")
+    entered = str(stripped_input(msg))
+    f.write(f"{entered}\n")
 
 
 # setting function start here
@@ -70,32 +67,28 @@ def setting_input():
         (
             (
                 "Maximal followers of account you want to follow?\n"
-                "We will skip media that have greater followers than " +
-                "this value "
+                "We will skip media that have greater followers than " + "this value "
             ),
             2000,
         ),
         (
             (
                 "Minimum followers a account should have before we follow?\n"
-                "We will skip media that have lesser followers than " +
-                "this value "
+                "We will skip media that have lesser followers than " + "this value "
             ),
             10,
         ),
         (
             (
                 "Maximum following of account you want to follow?\n"
-                "We will skip media that have a greater following " +
-                "than this value "
+                "We will skip media that have a greater following " + "than this value "
             ),
             7500,
         ),
         (
             (
                 "Minimum following of account you want to follow?\n"
-                "We will skip media that have lesser following " +
-                "from this value "
+                "We will skip media that have lesser following " + "from this value "
             ),
             10,
         ),
@@ -114,8 +107,8 @@ def setting_input():
         ("Delay from one unfollow to another unfollow you will perform ", 30),
         ("Delay from one comment to another comment you will perform ", 60),
         (
-            "Want to use proxy? insert your proxy or leave it blank " +
-            "if no. (just enter",
+            "Want to use proxy? insert your proxy or leave it blank "
+            + "if no. (just enter",
             "None",
         ),
     ]
@@ -164,13 +157,13 @@ def username_adder():
         print("We will add your instagram account.")
         print("Don't worry. It will be stored locally.")
         while True:
-            print("Enter your login: ")
-            f.write(str(sys.stdin.readline().strip()) + ":")
-            print("Enter your password: (it will not be shown due to security "
-                  "reasons - just start typing and press Enter)")
+            f.write(stripped_input("Enter your login: "))
+            print(
+                "Enter your password: (it will not be shown due to security "
+                "reasons - just start typing and press Enter)"
+            )
             f.write(getpass.getpass() + "\n")
-            print("Do you want to add another account? (y/n)")
-            if "y" not in sys.stdin.readline():
+            if input("Do you want to add another account? (y/n)").lower() != "y":
                 break
 
 
@@ -179,13 +172,11 @@ def get_adder(name, fname):
         print("Current Database:")
         print(bot.read_list_from_file(fname))
         with open(fname, "a") as f:
-            print("Add {} to database".format(name))
+            print(f"Add {name} to database")
             while True:
-                print("Enter {}: ".format(name))
-                f.write(str(sys.stdin.readline().strip()) + "\n")
-                print("Do you want to add another {}? (y/n)\n".format(name))
-                if "y" not in sys.stdin.readline():
-                    print("Done adding {}s to database".format(name))
+                f.write(input(f"Enter {name}: \n"))
+                if input(f"Do you want to add another {name}? (y/n)\n").lower() != "y":
+                    print(f"Done adding {name}s to database")
                     break
 
     return _adder()
@@ -274,7 +265,7 @@ def menu_follow():
             """
             )
             hashtags = []
-            if "1" in sys.stdin.readline():
+            if stripped_input() == "1":
                 hashtags = (
                     input(
                         "Insert hashtags separated by spaces\n"
@@ -298,7 +289,7 @@ def menu_follow():
             2.Use username database
             """
             )
-            if "1" in sys.stdin.readline():
+            if stripped_input() == "1":
                 user_id = input("who?\n").strip()
             else:
                 user_id = random.choice(bot.read_list_from_file(users_file))
@@ -312,7 +303,7 @@ def menu_follow():
             2.Use username database
             """
             )
-            if "1" in sys.stdin.readline():
+            if stripped_input() == "1":
                 user_id = input("who?\n").strip()
             else:
                 user_id = random.choice(bot.read_list_from_file(users_file))
@@ -326,7 +317,7 @@ def menu_follow():
             2.Use username database
             """
             )
-            if "1" in sys.stdin.readline():
+            if stripped_input() == "1":
                 user_id = input("who?\n").strip()
             else:
                 user_id = random.choice(bot.read_list_from_file(users_file))
@@ -367,7 +358,7 @@ def menu_like():
             """
             )
             hashtags = []
-            if "1" in sys.stdin.readline():
+            if stripped_input() == "1":
                 hashtags = (
                     input(
                         "Insert hashtags separated by spaces\n"
@@ -377,9 +368,7 @@ def menu_like():
                     .split(" ")
                 )
             else:
-                hashtags.append(
-                    random.choice(bot.read_list_from_file(hashtag_file))
-                )
+                hashtags.append(random.choice(bot.read_list_from_file(hashtag_file)))
             for hashtag in hashtags:
                 bot.like_hashtag(hashtag)
 
@@ -390,7 +379,7 @@ def menu_like():
             2.Use username database
             """
             )
-            if "1" in sys.stdin.readline():
+            if stripped_input() == "1":
                 user_id = input("who?\n").strip()
             else:
                 user_id = random.choice(bot.read_list_from_file(users_file))
@@ -403,7 +392,7 @@ def menu_like():
             2.Use username database
             """
             )
-            if "1" in sys.stdin.readline():
+            if stripped_input() == "1":
                 user_id = input("who?\n").strip()
             else:
                 user_id = random.choice(bot.read_list_from_file(users_file))
@@ -416,7 +405,7 @@ def menu_like():
             2.Use username database
             """
             )
-            if "1" in sys.stdin.readline():
+            if stripped_input() == "1":
                 user_id = input("who?\n").strip()
             else:
                 user_id = random.choice(bot.read_list_from_file(users_file))
@@ -458,7 +447,7 @@ def menu_comment():
             2.Use hashtag database
             """
             )
-            if "1" in sys.stdin.readline():
+            if stripped_input() == "1":
                 hashtag = input("what?").strip()
             else:
                 hashtag = random.choice(bot.read_list_from_file(hashtag_file))
@@ -471,13 +460,11 @@ def menu_comment():
             2.Use username database
             """
             )
-            if "1" in sys.stdin.readline():
+            if stripped_input() == "1":
                 user_id = input("who?\n").strip()
             else:
                 user_id = random.choice(bot.read_list_from_file(users_file))
-            bot.comment_medias(
-                bot.get_user_medias(user_id, filtration=False)
-            )
+            bot.comment_medias(bot.get_user_medias(user_id, filtration=False))
 
         elif ans == "3":
             print(
@@ -486,15 +473,13 @@ def menu_comment():
             2.Use existing list
             """
             )
-            if "1" in sys.stdin.readline():
+            if stripped_input() == "1":
                 userlist_maker()
-            if "2" in sys.stdin.readline():
+            if stripped_input() == "2":
                 print(userlist)
             users = bot.read_list_from_file(userlist)
             for user_id in users:
-                bot.comment_medias(bot.get_user_medias(
-                    user_id, filtration=True
-                ))
+                bot.comment_medias(bot.get_user_medias(user_id, filtration=True))
 
         elif ans == "4":
             bot.comment_medias(bot.get_timeline_medias())
@@ -614,10 +599,13 @@ def menu_setting():
 
 
 # for input compability
-try:
-    input = raw_input
-except NameError:
-    pass
+def stripped_input(param=None):
+    if param:
+        result = input(param)
+    else:
+        result = input()
+    return result.strip()
+
 
 # files location
 hashtag_file = "hashtagsdb.txt"

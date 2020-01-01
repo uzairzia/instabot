@@ -3,13 +3,7 @@
 """
 
 
-def filter_medias(
-    self,
-    media_items,
-    filtration=True,
-    quiet=False,
-    is_comment=False
-):
+def filter_medias(self, media_items, filtration=True, quiet=False, is_comment=False):
     if filtration:
         if not quiet:
             self.logger.info("Received {} medias.".format(len(media_items)))
@@ -143,9 +137,7 @@ def check_user(self, user_id, unfollowing=False):  # noqa: C901
         return False
 
     if user_id == str(self.user_id):
-        self.console_print((
-            "`user_id` equals bot's `user_id`, skipping!"
-        ), "green")
+        self.console_print(("`user_id` equals bot's `user_id`, skipping!"), "green")
         return False
 
     if user_id in self.following:
@@ -160,9 +152,7 @@ def check_user(self, user_id, unfollowing=False):  # noqa: C901
         self.console_print("not `user_info`, skipping!", "red")
         return False
 
-    msg = (
-        "USER_NAME: {username}, FOLLOWER: {followers}, FOLLOWING: {following}"
-    )
+    msg = "USER_NAME: {username}, FOLLOWER: {followers}, FOLLOWING: {following}"
     follower_count = user_info["follower_count"]
     following_count = user_info["following_count"]
     print(
@@ -178,9 +168,7 @@ def check_user(self, user_id, unfollowing=False):  # noqa: C901
 
     if not unfollowing:
         if self.filter_previously_followed and user_id in followed.list:
-            self.console_print((
-                "info: account previously followed, skipping!"
-            ), "red")
+            self.console_print(("info: account previously followed, skipping!"), "red")
             return False
 
     if (
@@ -189,10 +177,7 @@ def check_user(self, user_id, unfollowing=False):  # noqa: C901
     ):
         if user_info["has_anonymous_profile_picture"]:
             self.console_print(
-                (
-                    "info: account DOES NOT HAVE "
-                    "A PROFILE PHOTO, skipping! "
-                ), "red"
+                ("info: account DOES NOT HAVE " "A PROFILE PHOTO, skipping! "), "red"
             )
             skipped.append(user_id)
             return False
@@ -242,8 +227,7 @@ def check_user(self, user_id, unfollowing=False):  # noqa: C901
     if not (following_count == 0):
         if (
             (following_count > 0)
-            and follower_count / following_count >
-            self.max_followers_to_following_ratio
+            and follower_count / following_count > self.max_followers_to_following_ratio
         ):
             msg = (
                 "follower_count / following_count > "
@@ -255,9 +239,8 @@ def check_user(self, user_id, unfollowing=False):  # noqa: C901
     
     if not (follower_count == 0):
         if (
-            (follower_count > 0) and
-            following_count / follower_count >
-            self.max_following_to_followers_ratio
+            (follower_count > 0)
+            and following_count / follower_count > self.max_following_to_followers_ratio
         ):
             msg = (
                 "following_count / follower_count > "
@@ -272,8 +255,7 @@ def check_user(self, user_id, unfollowing=False):  # noqa: C901
         and user_info["media_count"] < self.min_media_count_to_follow
     ):
         msg = (
-            "media_count < bot.min_media_count_to_follow, "
-            "BOT or INACTIVE, skipping!"
+            "media_count < bot.min_media_count_to_follow, " "BOT or INACTIVE, skipping!"
         )
         self.console_print(msg, "red")
         skipped.append(user_id)

@@ -2,18 +2,16 @@
 
 import getpass
 import os
-import sys
 
 SECRET_FILE = "secret.txt"
 
 
 def add_credentials():
     with open(SECRET_FILE, "a") as f:
-        print("Enter your login: ")
-        f.write(str(sys.stdin.readline().strip()) + ":")
+        f.write(str(input("Enter your username: ")) + ":")
         print(
-            "Enter your password: (it will not be shown due to security " +
-            "reasons - just start typing and press Enter)"
+            "Enter your password: (it will not be shown due to security "
+            + "reasons - just start typing and press Enter)"
         )
         f.write(getpass.getpass() + "\n")
 
@@ -39,7 +37,7 @@ def get_credentials(username=None):
         print("%d: %s" % (0, "add another account."))
         print("%d: %s" % (-1, "delete all accounts."))
         try:
-            ind = int(sys.stdin.readline())
+            ind = int(input())
             if ind == 0:
                 add_credentials()
                 continue
@@ -70,22 +68,18 @@ def check_secret():
                     else:
                         return True
                 except Exception:
-                    print(
-                        "Your file is broken. We will delete it " +
-                        "and try again."
-                    )
+                    print("Your file is broken. We will delete it " + "and try again.")
                     os.remove(SECRET_FILE)
         else:
             print(
                 "We need to create a text file '%s' where "
-                "we will store your login and password from Instagram."
-                % SECRET_FILE
+                "we will store your login and password from Instagram." % SECRET_FILE
             )
             print("Don't worry. It will be stored locally.")
             while True:
                 add_credentials()
                 print("Do you want to add another account? (y/n)")
-                if "y" not in sys.stdin.readline():
+                if input().lower() != "y":
                     break
 
 
