@@ -288,7 +288,7 @@ class API(object):
                 else:
                     return False
             elif self.last_json.get("two_factor_required"):
-                if two_factor_auth(self):
+                if self.two_factor_auth():
                     self.save_successful_login()
                     self.login_flow(True)
                     return True
@@ -444,7 +444,7 @@ class API(object):
         return not self.is_logged_in
 
     def set_proxy(self):
-        if self.proxy:
+        if getattr(self, 'proxy', None):
             parsed = urllib.parse.urlparse(self.proxy)
             scheme = "http://" if not parsed.scheme else ""
             self.session.proxies["http"] = scheme + self.proxy
@@ -459,6 +459,7 @@ class API(object):
         headers=None,
         extra_sig=None,
     ):
+        self.set_proxy()  # Only happens if `self.proxy`
         if not self.is_logged_in and not login:
             msg = "Not logged in!"
             self.logger.critical(msg)
@@ -516,9 +517,9 @@ class API(object):
                     and "feedback_required" in str(
                         response_data.get("message").encode('utf-8')):
                     self.logger.error(
-                        "ATTENTION!: `feedback_required`"
+                        "ATTENTION!: `feedback_required: `"
                         + str(response_data.get(
-                            "feedback_message").encode('utf-8'))
+                            "feedback_message"))
                     )
                     try:
                         self.last_response = response
@@ -1808,6 +1809,17 @@ class API(object):
 
     def get_presence(self):
         return self.send_request("direct_v2/get_presence/")
+
+    def get_thread(self, thread_id, cursor_id=None):
+        data = {
+            "use_unified_inbox": "true"
+        }
+        if cursor_id is not None:
+            data["cursor"] = cursor_id
+        return self.send_request(
+            "direct_v2/threads/{}/".format(thread_id),
+            json.dumps(data)
+        )
 
     def get_ranked_recipients(self, mode, show_threads, query=None):
         data = {

@@ -135,9 +135,8 @@ def get_hashtag_medias(self, hashtag, filtration=True):
     return self.filter_medias(self.api.last_json.get("items"), filtration)
 
 
-def get_total_hashtag_medias(self, hashtag, amount=100, filtration=False):
+def get_total_hashtag_medias(self, hashtag, amount=1000, filtration=False):
     medias = self.api.get_total_hashtag_feed(hashtag, amount)
-
     return self.filter_medias(medias, filtration=filtration)
 
 

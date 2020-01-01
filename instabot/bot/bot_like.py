@@ -1,5 +1,8 @@
 from tqdm import tqdm
 import time
+from pathlib import Path # to create file paths that work on multiple OS
+
+LIKED_HASHTAG_POSTS_FILE = str(Path("./liked_hashtag_posts.txt"))
 
 
 def like(
@@ -15,7 +18,6 @@ def like(
     entity_page_name=None,
     entity_page_id=None,
 ):
-
     if not self.reached_limit("likes"):
         if self.blocked_actions["likes"]:
             self.logger.warning("YOUR `LIKE` ACTION IS BLOCKED")
@@ -24,9 +26,10 @@ def like(
                     "blocked_actions_protection ACTIVE. "
                     "Skipping `like` action."
                 )
+                self.logger.info("Could not like media %s." % media_id)
                 return False
-        self.delay("like")
         if check_media and not self.check_media(media_id):
+            self.logger.info("Could not like media %s." % media_id)
             return False
         #
         # TODO: commented out simulation "open link in app"
@@ -42,6 +45,7 @@ def like(
         #     self.logger.debug("Getting media info...")
         #     self.api.media_info(media_id)
         #
+        
         _r = self.api.like(
             media_id,
             container_module=container_module,
@@ -53,6 +57,7 @@ def like(
             entity_page_name=entity_page_name,
             entity_page_id=entity_page_id,
         )
+        
         if _r == "feedback_required":
             self.logger.error("`Like` action has been BLOCKED...!!!")
             # if no sleep enabled, default flow,
@@ -76,14 +81,17 @@ def like(
                 # otherwise (first block or no protection)
                 # sleep for specified time
                 else:
-                    self.logger.info("`Like` action is going to sleep for \
-                        %s seconds." % self.blocked_actions_sleep_delay)
                     self.sleeping_actions["likes"] = True
-                    time.sleep(self.blocked_actions_sleep_delay)
+                    self.delay(duration=self.blocked_actions_sleep_delay)
+            self.logger.info("Could not like media %s." % media_id)
             return False
         if _r:
-            self.logger.info("Liked media %s." % media_id)
+            self.logger.info("Successfully liked media %s." % media_id)
             self.total["likes"] += 1
+            self.write_file(LIKED_HASHTAG_POSTS_FILE, media_id+"\n")
+            
+            # DELAY OCCURS IN THE CALLING FUNCTION LOOP in `def like_medias()`
+
             # if action just slept and now successful, then no longer sleeping
             if self.blocked_actions_sleep and self.sleeping_actions["likes"]:
                 self.logger.info("`Like` action is no longer sleeping.")
@@ -91,8 +99,24 @@ def like(
             return True
     else:
         self.logger.info("Out of likes for today.")
+        self.reached_todays_limit_delay()
+        
+        recursive_like_result = self.like(
+            media_id,
+            check_media,
+            container_module,
+            feed_position,
+            username,
+            user_id,
+            hashtag_name,
+            hashtag_id,
+            entity_page_name,
+            entity_page_id,
+        )
+        return recursive_like_result
+    
+    self.logger.info("Could not like media %s." % media_id)
     return False
-
 
 def like_comment(self, comment_id):
     if not self.reached_limit("likes"):
@@ -127,6 +151,7 @@ def like_comment(self, comment_id):
             return True
     else:
         self.logger.info("Out of likes for today.")
+        self.reached_todays_limit_delay()
     return False
 
 
@@ -176,9 +201,26 @@ def like_medias(
     if not medias:
         self.logger.info("Nothing to like.")
         return broken_items
-    self.logger.info("Going to like %d medias." % (len(medias)))
+    self.logger.info("Going to like %d medias.\n" % (len(medias)))
+    
+    self.logger.info("Script will auto-pause after liking each media. (without outputting delay)\n"
+    "\t\t\t\t\t...Delay Range:\n" 
+    "\t\t\t\t\t\t..if liking successful: {} seconds\n"
+    "\t\t\t\t\t\t..if liking unsuccessful: {} seconds\n".format(self.delays['like'],self.delays['error']))
+
     feed_position = 0
+    previous_like_result = None
     for media in tqdm(medias):
+        if feed_position == 0:
+            self.delay("very_small",output=0)
+
+        if previous_like_result == True: 
+            self.delay("like",output=0)
+        elif previous_like_result == False:
+            self.delay("error",output=0)
+        else:
+            pass
+
         if not self.like(
             media,
             check_media=check_media,
@@ -191,10 +233,14 @@ def like_medias(
             entity_page_name=entity_page_name,
             entity_page_id=entity_page_id,
         ):
-            self.error_delay()
             broken_items.append(media)
+            previous_like_result = False
+        else:
+            previous_like_result = True
+
         feed_position += 1
-    self.logger.info("DONE: Total liked %d medias." % self.total["likes"])
+    print()
+    self.logger.info("DONE: Liked %d medias today (till now)." % self.total["likes"])
     return broken_items
 
 
@@ -225,6 +271,7 @@ def like_users(self, user_ids, nlikes=None, filtration=True):
     for user_id in user_ids:
         if self.reached_limit("likes"):
             self.logger.info("Out of likes for today.")
+            self.reached_todays_limit_delay()
             return
         self.like_user(user_id, amount=nlikes, filtration=filtration)
 
@@ -232,8 +279,21 @@ def like_users(self, user_ids, nlikes=None, filtration=True):
 def like_hashtag(self, hashtag, amount=None):
     """ Likes last medias from hashtag """
     self.logger.info("Going to like media with hashtag #%s." % hashtag)
+   
     medias = self.get_total_hashtag_medias(hashtag, amount)
-    if self.api.search_tags(hashtag):
+    previous_liked_medias = self.read_file(LIKED_HASHTAG_POSTS_FILE).strip().split()
+    skipped_medias = []
+
+    for media in medias:
+        if media in previous_liked_medias:
+            self.logger.info("Media with ID:{} is already liked. It will be skipped...".format(media))
+            skipped_medias.append(media)
+
+    for media in skipped_medias:
+        medias.remove(media)
+
+    search_tag = self.api.search_tags(hashtag)
+    if search_tag:
         for tag in self.api.last_json["results"]:
             if tag["name"] == hashtag:
                 hashtag_id = tag["id"]
@@ -241,8 +301,10 @@ def like_hashtag(self, hashtag, amount=None):
     else:
         self.logger.error("NO INFO FOR HASHTAG: {}".format(hashtag))
         return False
+
     return self.like_medias(
         medias,
+        check_media=False,
         container_module="feed_contextual_hashtag",
         hashtag_name=hashtag,
         hashtag_id=hashtag_id,
@@ -258,6 +320,8 @@ def like_followers(self, user_id, nlikes=None, nfollows=None):
     self.logger.info("Like followers of: %s." % user_id)
     if self.reached_limit("likes"):
         self.logger.info("Out of likes for today.")
+        self.reached_todays_limit_delay()
+        like_followers(self, user_id, nlikes=None, nfollows=None)
         return
     if not user_id:
         self.logger.info("User not found.")

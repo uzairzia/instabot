@@ -4,6 +4,7 @@ import os
 import random
 import signal
 import time
+import sys
 
 from .. import utils
 from ..api import API
@@ -103,6 +104,9 @@ from .bot_photo import download_photo, download_photos, upload_photo
 from .bot_stats import save_user_stats
 from .bot_story import download_stories, upload_story_photo, watch_users_reels
 from .bot_support import (
+    print_divider,
+    write_file,
+    read_file,
     check_if_file_exists,
     console_print,
     extract_urls,
@@ -136,43 +140,46 @@ class Bot(object):
         friends_file="friends.txt",
         base_path="",
         proxy=None,
-        max_likes_per_day=1000,
+        max_likes_per_day=85,
         max_unlikes_per_day=1000,
         max_follows_per_day=350,
         max_unfollows_per_day=350,
         max_comments_per_day=100,
         max_blocks_per_day=100,
         max_unblocks_per_day=100,
-        max_likes_to_like=100,
-        min_likes_to_like=20,
+        max_likes_to_like=sys.maxsize,
+        min_likes_to_like=0,
         max_messages_per_day=300,
-        filter_users=True,
-        filter_private_users=True,
+        filter_users=False,
+        filter_private_users=False,
         filter_users_without_profile_photo=False,
         filter_previously_followed=False,
         filter_business_accounts=False,
         filter_verified_accounts=False,
-        max_followers_to_follow=5000,
-        min_followers_to_follow=10,
-        max_following_to_follow=2000,
-        min_following_to_follow=10,
-        max_followers_to_following_ratio=15,
-        max_following_to_followers_ratio=15,
-        min_media_count_to_follow=3,
-        max_following_to_block=2000,
-        like_delay=10,
-        unlike_delay=10,
-        follow_delay=30,
-        unfollow_delay=30,
-        comment_delay=60,
-        block_delay=30,
-        unblock_delay=30,
-        message_delay=60,
-        stop_words=("shop", "store", "free"),
-        blacklist_hashtags=["#shop", "#store", "#free"],
+        max_followers_to_follow=sys.maxsize,
+        min_followers_to_follow=0,
+        max_following_to_follow=sys.maxsize,
+        min_following_to_follow=0,
+        max_followers_to_following_ratio=sys.maxsize,
+        max_following_to_followers_ratio=sys.maxsize,
+        min_media_count_to_follow=0,
+        max_following_to_block=sys.maxsize,
+        like_delay=(600,3600),
+        unlike_delay=(600,3600),
+        follow_delay=(900,3600),
+        unfollow_delay=(900, 3600),
+        comment_delay=(1800,7200),
+        block_delay=(1800,3600),
+        unblock_delay=(1800,3600),
+        message_delay=(3600,14400),
+        small_delay=(5,10),
+        very_small_delay=(2,5),
+        error_delay=(60,600),
+        stop_words=(), # set of strings
+        blacklist_hashtags=[], # list of strings
         blocked_actions_protection=True,
-        blocked_actions_sleep=False,
-        blocked_actions_sleep_delay=300,
+        blocked_actions_sleep=True,
+        blocked_actions_sleep_delay=(86400, 86400),      # if action blocked, script will sleep for 1 day
         verbosity=True,
         device=None,
         save_logfile=True,
@@ -199,6 +206,9 @@ class Bot(object):
             "block": block_delay,
             "unblock": unblock_delay,
             "message": message_delay,
+            "small": small_delay,
+            "very_small": very_small_delay,
+            "error": error_delay,
         }
 
         # limits - follow
@@ -474,26 +484,48 @@ class Bot(object):
             "Total requests: {}".format(self.api.total_requests)
         )
 
-    def delay(self, key):
-        """
-        Sleep only if elapsed time since
-        `self.last[key]` < `self.delay[key]`.
-        """
-        last_action, target_delay = self.last[key], self.delays[key]
-        elapsed_time = time.time() - last_action
-        if elapsed_time < target_delay:
-            t_remaining = target_delay - elapsed_time
-            time.sleep(t_remaining * random.uniform(0.25, 1.25))
-        self.last[key] = time.time()
+    def delay(self, key=None, duration=None, output=1):
+        if key != None:
+            target_delay = self.delays[key]
+        elif duration != None:
+            target_delay = duration
+        else:
+            target_delay = (10,20)
+
+        # Extract min and max values for range from argument
+        min_delay = target_delay[0]
+        max_delay = target_delay[1]
+
+        # Get a random integer within the range
+        delay_seconds = random.randint(min_delay,max_delay)
+
+        if (output == 1):
+            print("\n--->\tScript will auto-pause for %d seconds" %(delay_seconds))
+            print("#### [%s]" %(datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")))
+
+        # Wait for a random number number of seconds
+        time.sleep(delay_seconds)
+
+        if (output == 1):
+            print("--->\tScript has resumed\n")
 
     def error_delay(self):
-        time.sleep(10)
+        self.delay(key='error')
 
     def small_delay(self):
-        time.sleep(random.uniform(0.75, 3.75))
+        self.delay(key='small')
 
     def very_small_delay(self):
-        time.sleep(random.uniform(0.175, 0.875))
+        self.delay(key='very_small')
+
+    def reached_todays_limit_delay(self):
+        current_datetime = datetime.datetime.now()
+        #86400 seconds till next day + 60 seconds to be on the safe side
+        seconds_till_next_day = 86460 - (int)((current_datetime - current_datetime.replace(hour=0, minute=0, second=0, microsecond=0)).total_seconds())
+
+        # Wait until the next day arrives and then continue execution
+        self.delay(duration=(seconds_till_next_day,seconds_till_next_day))
+
 
     def reached_limit(self, key):
         current_date = datetime.datetime.now()
@@ -1000,6 +1032,15 @@ class Bot(object):
         return check_not_bot(self, user)
 
     # support
+    def print_divider(self):
+        return print_divider()
+
+    def write_file(self,file_name, content):
+        return write_file(file_name,content)
+    
+    def read_file(self,file_name):
+        return read_file(file_name)
+
     def check_if_file_exists(self, file_path, quiet=False):
         return check_if_file_exists(file_path, quiet)
 

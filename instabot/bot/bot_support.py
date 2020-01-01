@@ -11,6 +11,45 @@ import sys
 
 import huepy
 
+# For easier readability of output
+def print_divider():
+    print("\n==================================================================\n")
+
+def write_file(file_name, content):
+    result = ""
+    try:
+        file_reference = open(file_name, "a")
+        result = file_reference.write(content)
+        file_reference.close()
+        return result
+    except Exception as exception:
+        print_warning_block()
+        print("Unfortunately an error occured while writing to file : %s\nScript will continue but an unexpected error might occur." %(file_name))
+        print_warning_block()
+        result = None
+    
+    return result
+
+def read_file(file_name):
+    file_string = ""
+
+    if not os.path.isfile(file_name):
+        file_reference = open(file_name,"w")
+        file_reference.close()
+    else:
+        try:
+            file_reference = open(file_name, "r")
+            file_string = file_reference.read()
+            file_reference.close()
+
+        except Exception as exception:
+            print_warning_block()
+            print("Unfortunately an error occured while reading file : %s\nScript will continue but an unexpected error might occur." %(file_name))
+            print_warning_block()
+            file_string = None
+    
+    return file_string
+
 
 def check_if_file_exists(file_path, quiet=False):
     if not os.path.exists(file_path):
