@@ -3,16 +3,18 @@ from tqdm import tqdm
 
 
 def follow(self, user_id, check_user):
-    user_id = self.convert_to_user_id(user_id)
-    if self.log_follow_unfollow:
-        msg = "Going to follow `user_id` {}.".format(user_id)
-        self.logger.info(msg)
-    else:
-        msg = " ===> Going to follow `user_id`: {}.".format(user_id)
-        self.console_print(msg)
-    if check_user and not self.check_user(user_id):
-        return False
     if not self.reached_limit("follows"):
+        user_id = self.convert_to_user_id(user_id)
+        if self.log_follow_unfollow:
+            msg = "Going to follow `user_id` {}.".format(user_id)
+            self.logger.info(msg)
+        else:
+            msg = " ===> Going to follow `user_id`: {}.".format(user_id)
+            self.console_print(msg)
+
+        if check_user and not self.check_user(user_id):
+            return False
+
         if self.blocked_actions["follows"]:
             self.logger.warning("YOUR `FOLLOW` ACTION IS BLOCKED")
             if self.blocked_actions_protection:
@@ -20,8 +22,9 @@ def follow(self, user_id, check_user):
                     "blocked_actions_protection ACTIVE. "
                     "Skipping `follow` action."
                 )
+                self.logger.info("Could not follow user %s." % user_id)
                 return False
-        self.delay("follow")
+
         _r = self.api.follow(user_id)
         if _r == "feedback_required":
             self.logger.error("`Follow` action has been BLOCKED...!!!")
@@ -40,10 +43,9 @@ def follow(self, user_id, check_user):
                     self.sleeping_actions["follows"] = False
                     self.blocked_actions["follows"] = True
                 else:
-                    self.logger.info("`Follow` action is going to sleep \
-                        for %s seconds." % self.blocked_actions_sleep_delay)
+                    self.logger.info("`Follow` action is going to sleep.")
                     self.sleeping_actions["follows"] = True
-                    time.sleep(self.blocked_actions_sleep_delay)
+                    self.delay(duration=self.blocked_actions_sleep_delay)
             return False
         if _r:
             if self.log_follow_unfollow:
@@ -62,36 +64,54 @@ def follow(self, user_id, check_user):
             return True
     else:
         self.logger.info("Out of follows for today.")
+        self.reached_todays_limit_delay()
+
+        recursive_follow_result = self.follow(
+            user_id,
+            check_user
+        )
+        return recursive_follow_result
+
     return False
 
 
 def follow_users(self, user_ids, nfollows=None):
     broken_items = []
-    if self.reached_limit("follows"):
-        self.logger.info("Out of follows for today.")
-        return
-    msg = "Going to follow {} users.".format(len(user_ids))
-    self.logger.info(msg)
+    
+    # Find out the users that my user is following
+    if not self.following:
+        self.following
+
     skipped = self.skipped_file
     followed = self.followed_file
     unfollowed = self.unfollowed_file
-    self.console_print(msg, "green")
 
     # Remove skipped and already followed and unfollowed list from user_ids
     user_ids = list(
         set(user_ids) - skipped.set - followed.set - unfollowed.set
     )
     user_ids = user_ids[:nfollows] if nfollows else user_ids
-    msg = (
-        "After filtering followed, unfollowed and "
-        "`{}`, {} user_ids left to follow."
-    ).format(skipped.fname, len(user_ids))
-    self.console_print(msg, "green")
+    msg = "Going to follow {} user(s).\n".format(len(user_ids))
+    self.logger.info(msg)
+
+    self.logger.info("Script will auto-pause after following each user. (without outputting delay)\n"
+    "\t\t\t\t\t...Delay Range:\n" 
+    "\t\t\t\t\t\t..if following successful: {} seconds\n"
+    "\t\t\t\t\t\t..if following unsuccessful: {} seconds\n".format(self.delays['follow'],self.delays['error']))
+
+    previous_follow_result = None
+
     for user_id in tqdm(user_ids, desc="Processed users"):
-        if self.reached_limit("follows"):
-            self.logger.info("Out of follows for today.")
-            break
+        if previous_follow_result == True: 
+            self.delay("follow",output=0)
+        elif previous_follow_result == False:
+            self.delay("error",output=0)
+        else:
+            pass
+        print("\n")
         if not self.follow(user_id):
+            previous_follow_result = False
+            
             if self.api.last_response.status_code == 404:
                 self.console_print(
                     "404 error user {user_id} doesn't exist.", "red"
@@ -107,18 +127,19 @@ def follow_users(self, user_ids, nfollows=None):
                 try_number = 3
                 error_pass = False
                 for _ in range(try_number):
-                    time.sleep(60)
+                    self.error_delay()
                     error_pass = self.follow(user_id)
                     if error_pass:
                         break
                 if not error_pass:
-                    self.error_delay()
                     i = user_ids.index(user_id)
                     broken_items += user_ids[i:]
                     break
-
+        else:
+            previous_follow_result = True
+    print("\n")
     self.logger.info(
-        "DONE: Now following {} users in total.".format(self.total["follows"])
+        "DONE: Followed {} users today (until now).".format(self.total["follows"])
     )
     return broken_items
 

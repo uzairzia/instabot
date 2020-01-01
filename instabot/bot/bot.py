@@ -150,10 +150,10 @@ class Bot(object):
         max_likes_to_like=sys.maxsize,
         min_likes_to_like=0,
         max_messages_per_day=300,
-        filter_users=False,
+        filter_users=True,
         filter_private_users=False,
         filter_users_without_profile_photo=False,
-        filter_previously_followed=False,
+        filter_previously_followed=True,
         filter_business_accounts=False,
         filter_verified_accounts=False,
         max_followers_to_follow=sys.maxsize,
@@ -324,10 +324,7 @@ class Bot(object):
     def following(self):
         now = time.time()
         last = self.last.get("updated_following", now)
-        if self._following is None or (now - last) > 7200:
-            self.console_print(
-                "`bot.following` is empty, will download.", "green"
-            )
+        if self._following is None:
             self._following = self.get_user_following(self.user_id)
             self.last["updated_following"] = now
         return self._following
@@ -336,7 +333,7 @@ class Bot(object):
     def followers(self):
         now = time.time()
         last = self.last.get("updated_followers", now)
-        if self._followers is None or (now - last) > 7200:
+        if self._followers is None:
             self.console_print(
                 "`bot.followers` is empty, will download.", "green"
             )
