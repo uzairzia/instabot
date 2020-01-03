@@ -167,7 +167,7 @@ class Bot(object):
         like_delay=(600,3600),
         unlike_delay=(600,3600),
         follow_delay=(900,3600),
-        unfollow_delay=(900, 3600),
+        unfollow_delay=(600, 1200),
         comment_delay=(1800,7200),
         block_delay=(1800,3600),
         unblock_delay=(1800,3600),
@@ -331,9 +331,6 @@ class Bot(object):
         now = time.time()
         last = self.last.get("updated_followers", now)
         if self._followers is None:
-            self.console_print(
-                "`bot.followers` is empty, will download.", "green"
-            )
             self._followers = self.get_user_followers(self.user_id)
             self.last["updated_followers"] = now
         return self._followers
@@ -867,8 +864,8 @@ class Bot(object):
     def unfollow_users(self, user_ids):
         return unfollow_users(self, user_ids)
 
-    def unfollow_non_followers(self, n_to_unfollows=None):
-        return unfollow_non_followers(self, n_to_unfollows)
+    def unfollow_non_followers(self, days_followed_ago=7, n_to_unfollows=None):
+        return unfollow_non_followers(self, days_followed_ago, n_to_unfollows)
 
     def unfollow_everyone(self):
         return unfollow_everyone(self)

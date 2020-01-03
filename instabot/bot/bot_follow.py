@@ -2,8 +2,6 @@ import time
 from tqdm import tqdm
 from datetime import datetime
 
-FOLLOWED_DATE_FILE = "followed_date.txt"
-
 def follow(self, user_id, check_user):
     if not self.reached_limit("follows"):
         user_id = self.convert_to_user_id(user_id)
@@ -67,7 +65,7 @@ def follow(self, user_id, check_user):
             now = datetime.now()
 
             # Write userID and datetime when the user was followd to file
-            self.write_file(FOLLOWED_DATE_FILE, "%s,%s,%s,%s\n" %(str(user_id), str(now.year), str(now.month), str(now.day)))
+            self.write_file("followed_date.txt", "%s,%s\n" %(str(user_id), str(now)))
 
             if user_id not in self.following:
                 self.following.append(user_id)
@@ -119,7 +117,9 @@ def follow_users(self, user_ids, nfollows=None):
             self.delay("error",output=0)
         else:
             pass
+
         print("\n")
+
         if not self.follow(user_id):
             previous_follow_result = False
             
