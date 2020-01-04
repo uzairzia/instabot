@@ -92,8 +92,14 @@ def follow_users(self, user_ids, nfollows=None):
     # Remove skipped and already followed and unfollowed list from user_ids
     user_ids = list(set(user_ids) - skipped.set - followed.set - unfollowed.set)
     user_ids = user_ids[:nfollows] if nfollows else user_ids
-    msg = "Going to follow {} user(s).\n".format(len(user_ids))
-    self.logger.info(msg)
+
+    self.logger.info("After filtering, {} user(s) left.".format(len(user_ids)))
+
+    if not user_ids:
+        self.logger.info("No user IDs to follow.\n")
+        return broken_items
+
+    self.logger.info("Going to follow {} user(s).\n".format(len(user_ids)))
 
     self.logger.info("Script will auto-pause after following each user. (without outputting delay)\n"
     "\t\t\t\t\t...Delay Range:\n" 
