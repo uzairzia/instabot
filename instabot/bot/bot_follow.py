@@ -75,14 +75,6 @@ def follow(self, user_id, check_user):
             return True
     else:
         self.logger.info("Out of follows for today.")
-        self.reached_todays_limit_delay()
-
-        recursive_follow_result = self.follow(
-            user_id,
-            check_user
-        )
-        return recursive_follow_result
-
     return False
 
 
@@ -154,10 +146,11 @@ def follow_users(self, user_ids, nfollows=None):
 
 
 def follow_followers(self, user_id, nfollows=None):
-    self.logger.info("Follow followers of: {}".format(user_id))
     if self.reached_limit("follows"):
         self.logger.info("Out of follows for today.")
         return
+        
+    self.logger.info("Follow followers of: {}".format(user_id))
     if not user_id:
         self.logger.info("User not found.")
         return

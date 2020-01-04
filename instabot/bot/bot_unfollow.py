@@ -179,7 +179,11 @@ def unfollow_non_followers(self, days_followed_ago, n_to_unfollows=None):
     non_followers = temp_non_followers
 
     if (len(non_followers) != 0):
-        self.logger.info("Going to unfollow %d users." %(len(non_followers)))
+        if (n_to_unfollows is not None):
+            n_to_unfollows = min(n_to_unfollows, len(non_followers))
+            self.logger.info("Going to unfollow %d user(s)." %(n_to_unfollows))
+        else:
+            self.logger.info("Going to unfollow %d user(s)." %(len(non_followers)))
         print()
         for user_id in tqdm(non_followers[:n_to_unfollows]):
             print("\n")

@@ -1306,9 +1306,11 @@ class API(object):
             with open(to_file, "w"):
                 pass
         desc = "Getting {} of {}".format(which, user_id)
+
         with tqdm(total=total, desc=desc, leave=True) as pbar:
             while True:
                 get(user_id, next_max_id)
+                time.sleep(random.randint(0, 5))
                 last_json = self.last_json
                 try:
                     with open(to_file, "a") if to_file is not None else StringIO() as f:
@@ -1331,13 +1333,8 @@ class API(object):
                             result.append(item)
                             pbar.update(1)
                             sleep_track += 1
-                            if sleep_track >= 20000:
-                                sleep_time = random.uniform(120, 180)
-                                msg = (
-                                    "\nWaiting {:.2f} min. " "due to too many requests."
-                                ).format(sleep_time / 60)
-                                print(msg)
-                                time.sleep(sleep_time)
+                            if sleep_track >= 250:
+                                time.sleep(random.randint(60,300))
                                 sleep_track = 0
                     if not last_json["users"] or len(result) >= total:
                         return result[:total]
