@@ -103,22 +103,8 @@ def like(
             return True
     else:
         self.logger.info("Out of likes for today.")
-        self.reached_todays_limit_delay()
-        
-        recursive_like_result = self.like(
-            media_id,
-            check_media,
-            container_module,
-            feed_position,
-            username,
-            user_id,
-            hashtag_name,
-            hashtag_id,
-            entity_page_name,
-            entity_page_id,
-        )
-        return recursive_like_result
-    
+        return False
+
     self.logger.info("Could not like media %s." % media_id)
     return False
 
@@ -213,6 +199,10 @@ def like_medias(
     feed_position = 0
     previous_like_result = None
     for media in tqdm(medias):
+        if self.reached_limit("likes"):
+            self.logger.info("Out of likes for today.")
+            return broken_items
+
         if feed_position == 0:
             self.delay("very_small",output=0)
 
@@ -222,6 +212,8 @@ def like_medias(
             self.delay("error",output=0)
         else:
             pass
+
+        print("\n")
 
         if not self.like(
             media,
@@ -305,7 +297,6 @@ def like_hashtag(self, hashtag, amount=None):
 
     return self.like_medias(
         medias,
-        check_media=False,
         container_module="feed_contextual_hashtag",
         hashtag_name=hashtag,
         hashtag_id=hashtag_id,

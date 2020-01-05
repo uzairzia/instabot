@@ -89,7 +89,10 @@ def follow_users(self, user_ids, nfollows=None):
     followed = self.followed_file
     unfollowed = self.unfollowed_file
 
+    print("\n")
+
     # Remove skipped and already followed and unfollowed list from user_ids
+    self.logger.info("Filtering previously skipped, followed and unfollowed user IDs.")
     user_ids = list(set(user_ids) - skipped.set - followed.set - unfollowed.set)
     user_ids = user_ids[:nfollows] if nfollows else user_ids
 
@@ -157,6 +160,7 @@ def follow_followers(self, user_id, nfollows=None):
         return
         
     self.logger.info("Follow followers of: {}".format(user_id))
+    print("\n")
     if not user_id:
         self.logger.info("User not found.")
         return

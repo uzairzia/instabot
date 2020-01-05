@@ -5,19 +5,13 @@
 
 def filter_medias(self, media_items, filtration=True, quiet=False, is_comment=False):
     if filtration:
-        if not quiet:
-            self.logger.info("Received {} medias.".format(len(media_items)))
         if not is_comment:
             media_items = _filter_medias_not_liked(media_items)
-            if self.max_likes_to_like:
-                media_items = _filter_medias_nlikes(
-                    media_items, self.max_likes_to_like, self.min_likes_to_like
-                )
+            media_items = _filter_medias_nlikes(
+                self, media_items, self.max_likes_to_like, self.min_likes_to_like
+            )
         else:
             media_items = _filter_medias_not_commented(self, media_items)
-        if not quiet:
-            msg = "After filtration {} medias left."
-            self.logger.info(msg.format(len(media_items)))
     return _get_media_ids(media_items)
 
 
@@ -44,15 +38,26 @@ def _filter_medias_not_commented(self, media_items):
     return not_commented_medias
 
 
-def _filter_medias_nlikes(media_items, max_likes_to_like, min_likes_to_like):
+def _filter_medias_nlikes(self, media_items, max_likes_to_like, min_likes_to_like):
     filtered_medias = []
     for media in media_items:
         if "like_count" in media:
             if (
-                media["like_count"] < max_likes_to_like
-                and media["like_count"] > min_likes_to_like
+                media["like_count"] <= max_likes_to_like
+                and media["like_count"] >= min_likes_to_like
             ):
                 filtered_medias.append(media)
+            elif (
+                media["like_count"] < min_likes_to_like
+            ):
+                msg = "like_count < bot.min_likes_to_like, skipping!"
+                self.console_print(msg, "red")
+            elif (
+                media["like_count"] > max_likes_to_like
+            ):
+                msg = "like_count > bot.max_likes_to_like, skipping!"
+                self.console_print(msg, "red")
+
     return filtered_medias
 
 
@@ -75,8 +80,8 @@ def check_media(self, media_id):
             self.console_print(msg, "red")
             return False
 
-        if self.filter_medias(medias, quiet=True):
-            return check_user(self, self.get_media_owner(media_id))
+        if self.filter_medias(medias):
+            return True
         return False
 
     msg = "Media ID error!"

@@ -80,7 +80,6 @@ def read_list_from_file(file_path, quiet=False):
 
 def console_print(self, text, color=None):
     if self.verbosity:
-        text = "\n" + text
         if color is not None:
             text = getattr(huepy, color)(text)
         print(text)

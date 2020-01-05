@@ -1276,19 +1276,16 @@ class API(object):
             key = "following_count"
             get = self.get_user_followings
 
-        sleep_track = 0
+        count = 0
         result = []
         next_max_id = ""
         self.get_username_info(user_id)
         username_info = self.last_json
-        if "user" in username_info:
-            total = amount or username_info["user"][key]
 
-            if total > 200000:
-                print(
-                    "Consider temporarily saving the result of this big "
-                    "operation. This will take a while.\n"
-                )
+        if amount == None:
+            total = username_info["user"][key]
+        elif "user" in username_info:
+            total = min(amount, username_info["user"][key])
         else:
             return False
         if filter_business:
@@ -1310,8 +1307,9 @@ class API(object):
         with tqdm(total=total, desc=desc, leave=True) as pbar:
             while True:
                 get(user_id, next_max_id)
-                time.sleep(random.randint(0, 5))
                 last_json = self.last_json
+                if "users" in last_json:
+                    random.shuffle(last_json['users'])
                 try:
                     with open(to_file, "a") if to_file is not None else StringIO() as f:
                         for item in last_json["users"]:
@@ -1332,10 +1330,12 @@ class API(object):
                                     f.write("{}\n".format(item["pk"]))
                             result.append(item)
                             pbar.update(1)
-                            sleep_track += 1
-                            if sleep_track >= 250:
-                                time.sleep(random.randint(60,300))
-                                sleep_track = 0
+
+                            count += 1
+                            if count >= total:
+                                count = 0
+                                break
+
                     if not last_json["users"] or len(result) >= total:
                         return result[:total]
                 except Exception as e:
@@ -1382,6 +1382,10 @@ class API(object):
             while True:
                 self.get_hashtag_feed(hashtag_str, next_max_id)
                 last_json = self.last_json
+
+                # Shuffle so that each successive call to this function returns random medias
+                random.shuffle(last_json['items'])
+
                 if "items" not in last_json:
                     return hashtag_feed[:amount]
                 items = last_json["items"]
