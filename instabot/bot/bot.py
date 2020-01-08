@@ -32,6 +32,7 @@ from .bot_direct import (
     send_medias,
     send_message,
     send_messages,
+    send_message_new_followers,
     send_photo,
     send_profile,
 )
@@ -321,18 +322,20 @@ class Bot(object):
     def following(self):
         now = time.time()
         last = self.last.get("updated_following", now)
-        if self._following is None:
+        if self._following is None or (now - last) > (12 * 3600):
             self._following = self.get_user_following(self.user_id)
             self.last["updated_following"] = now
+            self.very_small_delay()
         return self._following
 
     @property
     def followers(self):
         now = time.time()
         last = self.last.get("updated_followers", now)
-        if self._followers is None:
+        if self._followers is None or (now - last) > (12 * 3600):
             self._followers = self.get_user_followers(self.user_id)
             self.last["updated_followers"] = now
+            self.very_small_delay()
         return self._followers
 
     @property
@@ -880,8 +883,11 @@ class Bot(object):
     def send_message(self, text, user_ids, thread_id=None):
         return send_message(self, text, user_ids, thread_id)
 
-    def send_messages(self, text, user_ids):
-        return send_messages(self, text, user_ids)
+    def send_messages(self, text, user_ids, amount=None):
+        return send_messages(self, text, user_ids, amount)
+
+    def send_message_new_followers(self, text, amount=None):
+        return send_message_new_followers(self, text, amount)
 
     def send_media(self, media_id, user_ids, text=None, thread_id=None):
         return send_media(self, media_id, user_ids, text, thread_id)

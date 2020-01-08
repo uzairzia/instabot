@@ -438,8 +438,10 @@ class API(object):
                     )  # Only `send_direct_item` doesn't need a signature
                     if extra_sig is not None and extra_sig != []:
                         post += "&".join(extra_sig)
+                time.sleep(3 * random.random())
                 response = self.session.post(config.API_URL + endpoint, data=post)
             else:  # GET
+                time.sleep(3 * random.random())
                 response = self.session.get(config.API_URL + endpoint)
         except Exception as e:
             self.logger.warning(str(e))
@@ -1283,9 +1285,9 @@ class API(object):
         username_info = self.last_json
 
         if amount == None:
-            total = username_info["user"][key]
+            total = username_info["user"][key] - 1
         elif "user" in username_info:
-            total = min(amount, username_info["user"][key])
+            total = min(amount, username_info["user"][key] - 1)
         else:
             return False
         if filter_business:
@@ -1346,6 +1348,7 @@ class API(object):
                     return result[:total]
 
                 next_max_id = last_json.get("next_max_id", "")
+                time.sleep(random.randint(2,10))
 
     def get_total_followers(self, user_id, amount=None):
         return self.get_total_followers_or_followings(user_id, amount, "followers")

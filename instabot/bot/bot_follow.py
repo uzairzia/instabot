@@ -117,7 +117,12 @@ def follow_users(self, user_ids, nfollows=None):
         elif previous_follow_result == False:
             self.delay("error",output=0)
         else:
+            self.delay("very_small", output=0)
             pass
+
+        if self.reached_limit("follows"):
+            self.logger.info("Out of follows for today.")
+            break
 
         print("\n")
 
@@ -153,7 +158,6 @@ def follow_users(self, user_ids, nfollows=None):
     )
     return broken_items
 
-
 def follow_followers(self, user_id, nfollows=None):
     if self.reached_limit("follows"):
         self.logger.info("Out of follows for today.")
@@ -170,7 +174,6 @@ def follow_followers(self, user_id, nfollows=None):
         self.logger.info("{} not found / closed / has no followers.".format(user_id))
     else:
         self.follow_users(followers[:nfollows])
-
 
 def follow_following(self, user_id, nfollows=None):
     self.logger.info("Follow following of: {}".format(user_id))

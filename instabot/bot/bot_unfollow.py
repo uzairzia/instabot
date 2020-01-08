@@ -185,9 +185,20 @@ def unfollow_non_followers(self, days_followed_ago, n_to_unfollows=None):
         else:
             self.logger.info("Going to unfollow %d user(s)." %(len(non_followers)))
         print()
+
+        self.logger.info("Script will auto-pause after unfollowing each user. (without outputting delay)\n"
+                         "\t\t\t\t\t...Delay Range:\n"
+                         "\t\t\t\t\t\t..if unfollowing successful: {} seconds\n"
+                         "\t\t\t\t\t\t..if unfollowing unsuccessful: {} seconds\n".format(self.delays['unfollow'],
+                                                                                          self.delays['error']))
+
         for user_id in tqdm(non_followers[:n_to_unfollows]):
+            if self.reached_limit("unfollows"):
+                self.logger.info("Out of unfollows for today.")
+                return
             print("\n")
-            self.unfollow(user_id)
+            result = self.unfollow(user_id)
+
         print()
         self.logger.info("DONE: Unfollowed {} users today (until now).".format(self.total["unfollows"]))        
     else:
